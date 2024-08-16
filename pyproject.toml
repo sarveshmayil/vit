@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "vit"
+version = "0.1.0"
+description = "ViT Re-Implementation"
+authors = ["Sarvesh Mayilvahanan"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.23.0"
+torch = "^2.2"
+torchvision = "^0.18"
