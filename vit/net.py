@@ -9,14 +9,14 @@ from typing import Union, Tuple
 class ViT(nn.Module):
     def __init__(
         self,
+        n_classes: int,
         image_size: Tuple[int, int],
         hidden_dim: int,
         depth: int,
         n_heads: int = 8,
-        head_dim: int = 64,
         mlp_dim: int = 128,
         channels: int = 3,
-        patch_size: Union[int, Tuple[int, int]] = 16
+        patch_size: Union[int, Tuple[int, int]] = 8
     ):
         super(ViT, self).__init__()
 
@@ -39,10 +39,11 @@ class ViT(nn.Module):
         self.transformer = Transformer(
             dim=hidden_dim,
             depth=depth,
-            num_heads=n_heads,
-            head_dim=head_dim,
+            heads=n_heads,
             mlp_dim=mlp_dim
         )
+
+        self.prediction_head = nn.Linear(hidden_dim, n_classes)
 
     def forward(self, inp: torch.Tensor) -> torch.Tensor:
         device = inp.device
@@ -64,5 +65,13 @@ class ViT(nn.Module):
         # Pass through transformer
         # (B, n_patches+1, hidden_dim) -> (B, n_patches+1, hidden_dim)
         x = self.transformer(x)
+
+        # Average pool over the patches
+        # (B, n_patches+1, hidden_dim) -> (B, hidden_dim)
+        x = x.mean(dim=1)
+
+        # Pass through prediction head
+        # (B, hidden_dim) -> (B, n_classes)
+        x = self.prediction_head(x)
 
         return x
