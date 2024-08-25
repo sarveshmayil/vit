@@ -34,7 +34,7 @@ class ViT(nn.Module):
             h=im_h // patch_h + im_h % patch_h,
             w=im_w // patch_w + im_w % patch_w,
             dim=hidden_dim
-        )
+        ).requires_grad_(False)
 
         self.transformer = Transformer(
             dim=hidden_dim,
@@ -46,8 +46,6 @@ class ViT(nn.Module):
         self.prediction_head = nn.Linear(hidden_dim, n_classes)
 
     def forward(self, inp: torch.Tensor) -> torch.Tensor:
-        device = inp.device
-
         # (B, C, H, W) -> (B, n_patches, patch_dim)
         x = patchify(inp, self.patch_size)
 
@@ -60,7 +58,7 @@ class ViT(nn.Module):
         x = torch.cat((cls_token, x), dim=1)
 
         # Add positional embedding
-        x += self.pos_embedding.to(device, dtype=x.dtype)
+        x[:, 1:, :] += self.pos_embedding.to(x.device)
 
         # Pass through transformer
         # (B, n_patches+1, hidden_dim) -> (B, n_patches+1, hidden_dim)
