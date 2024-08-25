@@ -1,12 +1,23 @@
 import torch
 import torch.nn as nn
 
+from vit.transformer import Transformer
 from vit.utils import patchify, pair, positional_embedding_2d
 
 from typing import Union, Tuple
 
 class ViT(nn.Module):
-    def __init__(self, image_size: Tuple[int, int], hidden_dim: int, channels: int = 3, patch_size: Union[int, Tuple[int, int]] = 16):
+    def __init__(
+        self,
+        image_size: Tuple[int, int],
+        hidden_dim: int,
+        depth: int,
+        n_heads: int = 8,
+        head_dim: int = 64,
+        mlp_dim: int = 128,
+        channels: int = 3,
+        patch_size: Union[int, Tuple[int, int]] = 16
+    ):
         super(ViT, self).__init__()
 
         self.image_size = pair(image_size)
@@ -25,6 +36,14 @@ class ViT(nn.Module):
             dim=hidden_dim
         )
 
+        self.transformer = Transformer(
+            dim=hidden_dim,
+            depth=depth,
+            num_heads=n_heads,
+            head_dim=head_dim,
+            mlp_dim=mlp_dim
+        )
+
     def forward(self, inp: torch.Tensor) -> torch.Tensor:
         device = inp.device
 
@@ -41,5 +60,9 @@ class ViT(nn.Module):
 
         # Add positional embedding
         x += self.pos_embedding.to(device, dtype=x.dtype)
+
+        # Pass through transformer
+        # (B, n_patches+1, hidden_dim) -> (B, n_patches+1, hidden_dim)
+        x = self.transformer(x)
 
         return x
